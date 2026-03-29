@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { getToken, clearToken } from './authStorage';
 
-// Production (Lightsail Docker): frontend + API share the same domain.
-// Nginx proxies /api/* to the .NET container, so baseURL can be "/api".
+// Production: point this at the public API origin, e.g.
+// VITE_API_BASE_URL=https://apipetrotransit.fonefit.com
 //
-// Local dev: default to your local .NET API URL.
+// Local dev: default to the local .NET API URL.
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:5270' : '');
 const api = axios.create({
   baseURL: `${API_BASE}/api`,

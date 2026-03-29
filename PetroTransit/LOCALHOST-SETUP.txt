@@ -29,6 +29,13 @@ http://localhost:5173
 Local API URL:
 http://localhost:5270
 
+Production two-subdomain AWS values:
+- Frontend public URL: https://petrotransit.fonefit.com
+- API public URL: https://apipetrotransit.fonefit.com
+- API env Frontend__BaseUrl should be https://petrotransit.fonefit.com
+- API env Frontend__AllowedOrigins should be https://petrotransit.fonefit.com
+- Frontend build env VITE_API_BASE_URL should be https://apipetrotransit.fonefit.com
+
 Seeded local admin account:
 - Email comes from Seed__Email in PetroTransit/.env
 - Username comes from Seed__Username in PetroTransit/.env

@@ -19,12 +19,14 @@ public class AuthController : ControllerBase
     private readonly UserManager<AppUser> _userManager;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthController(UserManager<AppUser> userManager, IConfiguration configuration, IEmailService emailService)
+    public AuthController(UserManager<AppUser> userManager, IConfiguration configuration, IEmailService emailService, IWebHostEnvironment environment)
     {
         _userManager = userManager;
         _configuration = configuration;
         _emailService = emailService;
+        _environment = environment;
     }
 
     [HttpPost("forgot-username")]
@@ -50,6 +52,11 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> TestEmail([FromBody] TestEmailRequestDto request)
     {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
         if (string.IsNullOrWhiteSpace(request.ToEmail))
         {
             return BadRequest("ToEmail is required.");
@@ -131,7 +138,7 @@ public class AuthController : ControllerBase
 
     // Existing /register endpoint is used for adding new users
     [HttpPost("register")]
-    [AllowAnonymous] // Admins use this to create accounts. AllowAnonymous is fine since the endpoint handles its own authentication flow for regular users/new accounts.
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<AppUser>> Register(UserRegisterDto request)
     {
         var user = new AppUser

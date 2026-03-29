@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,11 +66,13 @@ builder.Services.AddAuthorization(options =>
             string.Equals(context.User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase)));
 });
 
-// Configure CORS (for today: simplest possible)
+var allowedOrigins = GetAllowedOrigins(builder.Configuration);
+
+// Configure CORS for the separate frontend subdomain.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -141,12 +144,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 // Use CORS policy (CRITICAL for frontend communication)
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 
 app.Run();
@@ -225,6 +234,26 @@ static IDictionary ParseDotEnvFile(string envFilePath)
     }
 
     return values;
+}
+
+static string[] GetAllowedOrigins(IConfiguration configuration)
+{
+    var configuredOrigins = configuration["Frontend:AllowedOrigins"];
+    if (!string.IsNullOrWhiteSpace(configuredOrigins))
+    {
+        return configuredOrigins
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    var frontendBaseUrl = configuration["Frontend:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(frontendBaseUrl))
+    {
+        return new[] { frontendBaseUrl };
+    }
+
+    return new[] { "http://localhost:5173" };
 }
 
 static async Task SeedDomainDataAsync(AppDbContext db)

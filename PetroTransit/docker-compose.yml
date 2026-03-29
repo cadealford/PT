@@ -19,7 +19,7 @@ services:
     env_file:
       - .env
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       - db
     restart: unless-stopped
@@ -27,6 +27,8 @@ services:
   web:
     build:
       context: ./petro-transit-web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     ports:
       - "80:80"
     depends_on:
