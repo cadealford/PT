@@ -1,0 +1,15 @@
+PetroTransit/.env
+PetroTransit/.env.*
+!PetroTransit/.env.example
+PetroTransit/petro-transit-web/.env
+PetroTransit/petro-transit-web/.env.*
+
+# Build output
+**/bin/
+**/obj/
+**/output/
+**/dist/
+**/node_modules/
+
+# Local ASP.NET data protection keys
+**/App_Data/keys/

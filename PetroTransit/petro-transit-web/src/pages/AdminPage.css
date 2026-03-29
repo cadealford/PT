@@ -1,0 +1,220 @@
+.admin-page-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333; /* Ensure all default page text is dark */
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.admin-header h1 {
+    color: #007bff;
+    margin: 0;
+}
+
+.admin-back-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 8px 12px;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.admin-back-link:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.admin-note {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.admin-loading, .admin-error {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+    color: #dc3545;
+}
+
+.admin-error-message {
+    padding: 10px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.admin-section {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.admin-section h2 {
+    color: #343a40;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* --- Form Styles (Add & Edit) --- */
+.admin-add-form, .admin-edit-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px dashed #ced4da;
+    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+.admin-edit-form {
+    border-color: #ffc107;
+    background-color: #fffde7;
+    flex-direction: column;
+}
+
+.admin-edit-form h3 {
+    margin-top: 0;
+    color: #ffc107;
+}
+
+/* Specific styling for the user add form */
+.user-add-form input {
+    width: 20%; 
+    flex-grow: 1;
+}
+
+.admin-add-form input, .admin-edit-form input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #333; /* Input text color (dark gray/black) */
+    background-color: #ffffff; /* <-- CRITICAL FIX: Explicitly set input background to white */
+}
+
+/* --- Table Styles --- */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.admin-table th, .admin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+    color: #333; /* Ensure table text is dark */
+}
+
+.admin-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* --- Button Styles --- */
+.admin-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    white-space: nowrap; 
+}
+
+.admin-btn-add {
+    background-color: #28a745;
+    color: white;
+}
+
+.admin-btn-add:hover {
+    background-color: #218838;
+}
+
+.admin-btn-edit {
+    background-color: #ffc107;
+    color: #212529;
+    margin-right: 5px;
+}
+
+.admin-btn-edit:hover {
+    background-color: #e0a800;
+}
+
+.admin-btn-delete {
+    background-color: #dc3545;
+    color: white;
+    margin-left: 5px;
+}
+
+.admin-btn-delete:hover {
+    background-color: #c82333;
+}
+
+.admin-btn-promote {
+    background-color: #007bff;
+    color: white;
+}
+
+.admin-btn-promote:hover {
+    background-color: #0056b3;
+}
+
+.admin-btn-demote {
+    background-color: #6c757d;
+    color: white;
+}
+
+.admin-btn-demote:hover {
+    background-color: #5a6268;
+}
+
+.admin-btn-save {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.admin-btn-cancel {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+/* --- Role Badges --- */
+.admin-role {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.admin-role-admin {
+    background-color: #ffc107;
+    color: #343a40;
+}
+
+.admin-role-user {
+    background-color: #e9ecef;
+    color: #6c757d;
+}

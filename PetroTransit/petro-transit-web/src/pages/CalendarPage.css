@@ -1,0 +1,206 @@
+/* --- 1. MAIN LAYOUT --- */
+.petro-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #0f1a26;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+}
+
+/* --- 0. BACKGROUND VIDEO --- */
+.calendar-background-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.calendar-video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1;
+}
+
+/* --- 2. BLUE HEADER --- */
+.petro-header {
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(to bottom, #dbeaf9 0%, #cde1f6 100%);
+    padding: 10px 20px;
+    border-bottom: 1px solid #aebcd6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Header Text */
+.petro-title {
+    font-weight: bold;
+    font-size: 18px;
+    margin-right: 20px;
+    color: #555;
+}
+
+/* --- 3. CONTROLS (Buttons & Dropdowns) --- */
+.petro-btn {
+    background: linear-gradient(to bottom, #ffffff 0%, #e6e6e6 100%);
+    border: 1px solid #ccc;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+}
+.petro-btn:hover { background: #e1e1e1; }
+
+.petro-btn-primary {
+    background: linear-gradient(to bottom, #4a90e2 0%, #357abd 100%);
+    color: white;
+    border: 1px solid #2e6da4;
+}
+
+/* Dropdowns */
+.petro-select {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background-color: white;
+    color: #333 !important;
+    cursor: pointer;
+    min-width: 100px;
+}
+.petro-select option {
+    background-color: white;
+    color: #333;
+}
+
+/* --- 4. CALENDAR WRAPPER --- */
+.calendar-wrapper {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    padding: 20px;
+    background-color: transparent;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-card {
+    background: rgba(255, 255, 255, 0.95);
+    flex: 1;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* --- 5. FULLCALENDAR OVERRIDES --- */
+
+/* Fix invisible dates */
+.fc-daygrid-day-number {
+    color: #333 !important;
+    text-decoration: none !important;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+/* Fix event bars */
+.fc-event {
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 0.85em;
+    margin-bottom: 2px !important;
+    padding: 2px;
+    border: none;
+}
+
+/* Fix text inside green bars */
+.fc-event-title, .fc-event-time {
+    color: white !important;
+    font-weight: 500;
+    padding: 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Remove dots */
+.fc-daygrid-event-dot { display: none; }
+
+/* Grid headers */
+.fc-col-header-cell {
+    background-color: #eaf3fc;
+    color: #333;
+    padding: 8px 0;
+}
+
+/* Highlight today */
+.fc-day-today { background-color: #fff9e6 !important; }
+
+/* Borders */
+.fc-theme-standard td, .fc-theme-standard th { border-color: #dbeaf9; }
+
+
+/* --- 6. TOOLTIP STYLES --- */
+.petro-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    width: 250px;
+    font-size: 13px;
+    pointer-events: none; /* Crucial: lets mouse pass through so it doesn't flicker */
+    animation: fadeIn 0.2s ease-in-out;
+    color: #333;
+    text-align: left;
+}
+
+.tooltip-header {
+    background-color: #f0f4f8;
+    padding: 8px 12px;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    border-radius: 6px 6px 0 0;
+}
+
+.tooltip-body {
+    padding: 10px 12px;
+    color: #444;
+}
+
+.tooltip-body p {
+    margin: 4px 0;
+    line-height: 1.4;
+}
+
+.tooltip-notes {
+    color: #666;
+    margin-top: 8px !important;
+    border-top: 1px dashed #eee;
+    padding-top: 4px;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

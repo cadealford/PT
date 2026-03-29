@@ -1,0 +1,102 @@
+/* 1. Main Container (Solid Background for Utility Pages) */
+.auth-utility-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f4f7f6; /* Light gray background */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 2. Replicate the Login Box style */
+.auth-utility-card {
+    background-color: #ffffff; 
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15); /* Soft, visible shadow */
+    width: 350px;
+    text-align: center;
+}
+
+/* 3. Typography */
+.auth-utility-card h2 {
+    margin: 0 0 10px 0;
+    color: #333; /* Dark text for readability */
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.auth-utility-card p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* 4. Form Elements */
+.auth-utility-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-utility-form input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box; 
+    font-size: 14px;
+    color: #333; /* Ensure input text is black/dark */
+}
+
+.auth-utility-form button {
+    padding: 12px;
+    background: linear-gradient(to right, #4a90e2, #007bff);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.auth-utility-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+}
+
+/* Error and Success Messages */
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-bottom: 15px;
+    border: 1px solid #ef9a9a;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-bottom: 15px;
+    border: 1px solid #c3e6cb;
+}
+
+/* Back to Login Link */
+.return-link {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.return-link a {
+    color: #4a90e2;
+    text-decoration: none;
+}
+
+.return-link a:hover {
+    text-decoration: underline;
+}

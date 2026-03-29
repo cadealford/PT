@@ -1,0 +1,150 @@
+/* 1. Main Wrapper */
+.login-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 2. Background Video */
+.background-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures video fills screen without stretching */
+    z-index: 0; /* Base layer */
+}
+
+/* 3. Dark Overlay */
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* 40% opacity black */
+    z-index: 1; /* Sits on top of video */
+}
+
+/* 4. The Login Box */
+.login-box {
+    position: relative; /* Needed for z-index to work */
+    z-index: 2; /* Sits on top of overlay */
+    background-color: rgba(255, 255, 255, 0.95); 
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    width: 350px;
+    text-align: center;
+    backdrop-filter: blur(5px);
+}
+
+/* 5. Typography */
+.login-title {
+    margin: 0;
+    color: #333; 
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.login-subtitle {
+    margin: 5px 0 25px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* 6. Form Elements */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box; 
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    border-color: #4a90e2;
+    outline: none;
+}
+
+.remember-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    margin: 4px 0 12px 0;
+    user-select: none;
+}
+
+.remember-row input {
+    width: auto;
+    margin: 0;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(to right, #4a90e2, #007bff);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+}
+
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-bottom: 15px;
+    border: 1px solid #ef9a9a;
+}
+
+/* 7. New Forgot Links Section */
+.forgot-links {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-around; /* Use space-around to separate links */
+    font-size: 0.85em;
+}
+
+.forgot-link {
+    color: #4a90e2; /* Matches the button blue/gradient */
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.link-separator {
+    color: #bbb;
+}

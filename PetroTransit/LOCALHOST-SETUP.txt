@@ -1,0 +1,54 @@
+PetroTransit Localhost Startup
+
+Files:
+- Local environment file: PetroTransit/.env
+- Example environment file: PetroTransit/.env.example
+
+What the local setup uses:
+- Docker Desktop for the local PostgreSQL database
+- dotnet run for the API
+- Vite for the frontend
+
+Local startup steps:
+
+1. Start Docker Desktop.
+
+2. Start the local database from the PetroTransit folder:
+docker compose up -d db
+
+3. Start the API from the PetroTransit.API folder:
+dotnet run
+
+4. Start the frontend from the petro-transit-web folder:
+npm install
+npm run dev
+
+5. Open the frontend in your browser:
+http://localhost:5173
+
+Local API URL:
+http://localhost:5270
+
+Seeded local admin account:
+- Email comes from Seed__Email in PetroTransit/.env
+- Username comes from Seed__Username in PetroTransit/.env
+- Password comes from Seed__Password in PetroTransit/.env
+
+What gets seeded on startup:
+- One admin user from the Seed__* values in PetroTransit/.env
+- Starter airplanes if the Airplanes table is empty
+- Starter personnel if the Personnel table is empty
+
+If you need to rebuild the local database from scratch:
+1. Stop and remove the local containers and volume:
+docker compose down -v
+
+2. Start the local database again:
+docker compose up -d db
+
+3. Start the API again:
+dotnet run
+
+Important:
+- PetroTransit/.env is for local development only and should stay untracked.
+- AWS should use its own server-side environment variables, not your local .env file.
