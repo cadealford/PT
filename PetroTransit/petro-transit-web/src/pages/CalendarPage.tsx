@@ -4,9 +4,9 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { DatesSetArg, EventInput, EventHoveringArg, EventClickArg } from '@fullcalendar/core';
 import { jwtDecode } from 'jwt-decode'; 
-import api from '../services/api';
+import api from '../Services/api';
 import ReservationModal, { type ReservationData } from '../components/ReservationModal'; 
-import { getToken, clearToken } from '../services/authStorage';
+import { getToken, clearToken } from '../Services/authStorage';
 import './CalendarPage.css';
 
 interface TokenPayload {

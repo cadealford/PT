@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api from '../Services/api';
 import './AdminPage.css';
 import { useNavigate, Link } from 'react-router-dom';
 import { isAxiosError } from 'axios';

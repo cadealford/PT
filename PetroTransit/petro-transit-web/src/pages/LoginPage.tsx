@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
-import { getToken, setToken } from '../services/authStorage';
+import api from '../Services/api';
+import { getToken, setToken } from '../Services/authStorage';
 import './LoginPage.css';
 
 export default function LoginPage() {

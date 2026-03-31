@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { isAxiosError } from 'axios';
-import api from '../services/api';
+import api from '../Services/api';
 import './ReservationModal.css';
 
 export interface ReservationData {

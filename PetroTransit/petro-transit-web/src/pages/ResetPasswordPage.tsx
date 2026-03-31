@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import api from '../services/api';
+import api from '../Services/api';
 import { isAxiosError } from 'axios';
 import './AuthUtilityPage.css'; // <-- NEW CSS IMPORT
 
