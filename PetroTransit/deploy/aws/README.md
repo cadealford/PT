@@ -1,51 +1,98 @@
 # PetroTransit AWS Deployment
 
-This repo is now prepared for the two-public-subdomain layout:
+For the complete build, deployment, and day-2 operations guide, start with:
 
-- `https://petrotransit.fonefit.com` -> frontend EC2 target group
-- `https://apipetrotransit.fonefit.com` -> API EC2 target group
+- `deploy/aws/OPERATIONS.md`
 
-This follows the supervisor's ALB + EC2 + Docker approach.
+This repo is now prepared for the final two-EC2 production layout:
+
+- `EC2 #1`: OpenVPN server, installed directly on the host
+- `EC2 #2`: app server running Docker for `caddy + web + api`
+
+Public production URLs remain:
+
+- `https://petrotransit.fonefit.com`
+- `https://apipetrotransit.fonefit.com`
+
+Caddy on the app EC2 handles:
+
+- reverse proxy
+- automatic TLS
+- host-based routing for frontend vs API
+
+SSH for the app EC2 is not exposed publicly. Administrative SSH access should be allowed only from the VPN client subnet, such as `10.8.0.0/24`.
 
 ## Recommended AWS shape
 
 Use:
 
-- 1 Application Load Balancer
-- 2 target groups
-- 2 Linux EC2 instances or 2 small Auto Scaling groups
+- 1 public OpenVPN EC2 with Elastic IP
+- 1 public app EC2 with Elastic IP
 - 1 RDS PostgreSQL database
-- 1 ACM certificate covering both subdomains
-- Route53 DNS records for both subdomains
+- 2 Route53 `A` records pointing to the app EC2 Elastic IP
 - SES SMTP credentials for outbound email
 
-The clean split is:
+Recommended instance roles:
 
-- Web EC2 runs the frontend nginx container on port `80`
-- API EC2 runs an nginx container on port `80` that proxies to the .NET API container on port `8080`
+- OpenVPN EC2:
+  - Ubuntu 24.04
+  - OpenVPN installed directly on the host
+  - public `1194/udp`
+- App EC2:
+  - Ubuntu 24.04
+  - Docker Engine and Docker Compose plugin
+  - `caddy` container on `80/443`
+  - `web` container on internal port `80`
+  - `api` container on internal port `8080`
 
-This keeps the ALB config simple and matches the requested host-based routing model.
+There is no ALB in this design. Caddy terminates TLS directly on the app EC2.
 
-## ALB routing
+## Deployment files
 
-Create these HTTPS listener rules on the ALB:
+Primary app-host deployment files:
 
-- Host `petrotransit.fonefit.com` -> web target group
-- Host `apipetrotransit.fonefit.com` -> api target group
+- `deploy/aws/app/docker-compose.yml`
+- `deploy/aws/app/.env.example`
+- `deploy/aws/app/Caddyfile`
 
-Use ACM for the TLS certificate on the ALB listener.
+OpenVPN setup guidance:
 
-Point health checks to:
+- `deploy/aws/openvpn/README.md`
 
-- Web target group: `/`
-- API target group: `/health`
+Archived legacy layouts:
+
+- `deploy/aws/api/`
+- `deploy/aws/web/`
+- `deploy/aws/single-ec2/`
+
+Those folders are kept only for historical reference and are not the active production path.
 
 ## DNS
 
-Create these records in Route53:
+Create these Route53 records and point both at the app EC2 Elastic IP:
 
-- `petrotransit.fonefit.com` -> alias to ALB
-- `apipetrotransit.fonefit.com` -> alias to ALB
+- `petrotransit.fonefit.com`
+- `apipetrotransit.fonefit.com`
+
+Caddy will request and renew the TLS certificates automatically after DNS resolves correctly.
+
+## Security groups
+
+OpenVPN EC2 security group:
+
+- allow `1194/udp` from `0.0.0.0/0`
+- allow `22/tcp` only from your office IP or your preferred management source
+
+App EC2 security group:
+
+- allow `80/tcp` from `0.0.0.0/0`
+- allow `443/tcp` from `0.0.0.0/0`
+- do **not** allow `22/tcp` from `0.0.0.0/0`
+- allow `22/tcp` only from the VPN client CIDR, such as `10.8.0.0/24`
+
+RDS security group:
+
+- allow PostgreSQL `5432/tcp` from the app EC2 security group only
 
 ## RDS
 
@@ -57,7 +104,7 @@ Do not deploy the local Docker `db` service to AWS.
 
 The API already supports runtime-injected SMTP settings. No code change is required for AWS.
 
-Set these in the API environment:
+Set these in the app deployment `.env`:
 
 - `Smtp__Host`
 - `Smtp__Port`
@@ -72,18 +119,22 @@ If these values are missing, the API falls back to fake dev logging and does not
 
 `VITE_API_BASE_URL` is a frontend build-time setting, not a normal runtime API env var.
 
-For production builds, it must be:
+For production builds, keep it pointed at the public API hostname:
 
 ```env
 VITE_API_BASE_URL=https://apipetrotransit.fonefit.com
 ```
 
-## API runtime env vars
+## App runtime env vars
 
-Set these in the API environment:
+Set these in `deploy/aws/app/.env`:
 
 ```env
-ASPNETCORE_ENVIRONMENT=Production
+WEB_DOMAIN=petrotransit.fonefit.com
+API_DOMAIN=apipetrotransit.fonefit.com
+CADDY_EMAIL=ops@fonefit.com
+VITE_API_BASE_URL=https://apipetrotransit.fonefit.com
+
 ConnectionStrings__DefaultConnection=Host=...;Port=5432;Database=...;Username=...;Password=...
 AppSettings__Token=<long-random-secret>
 Frontend__BaseUrl=https://petrotransit.fonefit.com
@@ -101,44 +152,42 @@ Smtp__FromEmail=<sender@fonefit.com>
 
 Do not commit real values to the repo.
 
-## Deployment files in this folder
+## Deployment workflow
 
-- `deploy/aws/web/docker-compose.yml`
-- `deploy/aws/web/.env.example`
-- `deploy/aws/api/docker-compose.yml`
-- `deploy/aws/api/.env.example`
-- `deploy/aws/api/nginx.conf`
+1. Launch the OpenVPN EC2 in the target VPC and attach an Elastic IP.
+2. Install and configure OpenVPN on the host.
+3. Launch the app EC2 in the same VPC and attach an Elastic IP.
+4. Apply the app EC2 security group so SSH is allowed only from the VPN client CIDR.
+5. Provision RDS PostgreSQL.
+6. Install Docker Engine and Docker Compose on the app EC2.
+7. Clone this repo onto the app EC2.
+8. Copy `deploy/aws/app/.env.example` to `deploy/aws/app/.env`.
+9. Fill in the real domain, database, token, seed, and SMTP values.
+10. From `deploy/aws/app`, run:
 
-These are deployment templates for EC2-hosted Docker, not local development files.
+```bash
+docker compose up -d --build
+```
 
-## Suggested EC2 workflow
-
-1. Launch the web EC2 and API EC2 in the same VPC as the ALB and RDS.
-2. Install Docker and Docker Compose plugin on both instances.
-3. Clone this repo onto both instances.
-4. On the web EC2:
-   - copy `deploy/aws/web/.env.example` to an untracked `.env`
-   - fill in `VITE_API_BASE_URL`
-   - run `docker compose up -d --build` from `deploy/aws/web`
-5. On the API EC2:
-   - copy `deploy/aws/api/.env.example` to an untracked `.env`
-   - fill in the real runtime values
-   - run `docker compose up -d --build` from `deploy/aws/api`
-6. Register the EC2 instances in the ALB target groups.
-7. Configure Route53 aliases to the ALB.
-8. Verify:
+11. Create Route53 records for both hostnames pointing at the app EC2 Elastic IP.
+12. Verify:
+   - connect to OpenVPN successfully
+   - SSH to the app EC2 over private IP only after VPN connection
    - `https://petrotransit.fonefit.com`
    - `https://apipetrotransit.fonefit.com/health`
-   - login
+   - login flow
    - password reset email
 
-## Remaining manual AWS work
+## Notes for Arm instances
 
-- create security groups
-- create the ALB
-- create Route53 records
-- create ACM certificate
-- create RDS PostgreSQL
-- create SES SMTP credentials
-- inject the real environment values
+If you use a Graviton instance such as `t4g`, the current Docker base images for .NET 9, Node 20, nginx, and Caddy support ARM64, so building directly on the app EC2 is a reasonable path.
 
+## Next Steps
+
+1. Provision the OpenVPN EC2 and validate client connectivity.
+2. Provision the app EC2 with locked-down SSH.
+3. Provision RDS PostgreSQL and gather the final connection string.
+4. Fill in `deploy/aws/app/.env`.
+5. Deploy the Docker stack on the app EC2.
+6. Point Route53 DNS at the app EC2 Elastic IP.
+7. Validate frontend, API, auth, and email behavior.

@@ -3,6 +3,7 @@ PetroTransit/.env.*
 !PetroTransit/.env.example
 PetroTransit/petro-transit-web/.env
 PetroTransit/petro-transit-web/.env.*
+PetroTransit/deploy/aws/**/.env
 
 # Build output
 **/bin/

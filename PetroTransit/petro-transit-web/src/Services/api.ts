@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken, clearToken } from './authStorage';
 
-// Production: point this at the public API origin, e.g.
+// Production: point this at the public API origin served by Caddy on the app EC2, e.g.
 // VITE_API_BASE_URL=https://apipetrotransit.fonefit.com
 //
 // Local dev: default to the local .NET API URL.

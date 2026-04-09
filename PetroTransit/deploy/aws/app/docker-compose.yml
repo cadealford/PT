@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: ../../../PetroTransit.API
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    expose:
+      - "8080"
+    volumes:
+      - api_keys:/app/App_Data/keys
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../../../petro-transit-web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    expose:
+      - "80"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - api
+      - web
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  api_keys:
+  caddy_data:
+  caddy_config:
