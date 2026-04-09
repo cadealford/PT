@@ -59,13 +59,9 @@ OpenVPN setup guidance:
 
 - `deploy/aws/openvpn/README.md`
 
-Archived legacy layouts:
+Only supported app deployment layout:
 
-- `deploy/aws/api/`
-- `deploy/aws/web/`
-- `deploy/aws/single-ec2/`
-
-Those folders are kept only for historical reference and are not the active production path.
+- `deploy/aws/app/`
 
 ## DNS
 
