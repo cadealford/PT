@@ -1,0 +1,28 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - experimental
+
+concurrency:
+  group: petrotransit-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+
+    steps:
+      - name: Deploy latest code on EC2
+        run: |
+          set -e
+          cd /home/ubuntu/PT/PetroTransit
+          git fetch origin
+          git reset --hard origin/experimental
+          cd deploy/aws/app
+          docker compose up -d --build
+          docker compose ps
