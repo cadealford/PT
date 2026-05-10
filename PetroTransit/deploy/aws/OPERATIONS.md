@@ -5,8 +5,7 @@ This guide is the end-to-end operator handbook for the production PetroTransit A
 Final production layout:
 
 - `EC2 #1`: OpenVPN server installed directly on the host
-- `EC2 #2`: app server running Docker for `caddy + web + api`
-- `RDS`: PostgreSQL database
+- `EC2 #2`: app server running Docker for `postgres + caddy + web + api`
 - `Route53`: DNS for:
   - `petrotransit.fonefit.com`
   - `apipetrotransit.fonefit.com`
@@ -29,13 +28,9 @@ OpenVPN EC2:
 App EC2:
 
 - hosts the frontend, API, and Caddy reverse proxy
+- hosts PostgreSQL in Docker on the internal compose network
 - exposes `80/tcp` and `443/tcp` publicly
 - allows `22/tcp` only from the VPN client subnet
-
-RDS PostgreSQL:
-
-- stores application data
-- should accept `5432/tcp` only from the app EC2 security group
 
 Route53:
 
@@ -53,13 +48,14 @@ Build the environment in this order:
 2. Install and validate OpenVPN.
 3. Create the app EC2 and security group.
 4. Verify app EC2 SSH works only over VPN.
-5. Create the RDS PostgreSQL instance.
-6. Create or confirm the SES SMTP credentials.
-7. Clone the repo onto the app EC2.
-8. Prepare `deploy/aws/app/.env`.
+5. Create or confirm the SES SMTP credentials.
+6. Clone the repo onto the app EC2.
+7. Prepare `deploy/aws/app/.env`.
+8. If needed, migrate existing RDS data into the Docker PostgreSQL container.
 9. Deploy the Docker stack on the app EC2.
 10. Point Route53 DNS to the app EC2 Elastic IP.
 11. Validate frontend, API, login, and email.
+12. Delete the old RDS instance after validation.
 
 ## 3. AWS Resources Checklist
 
@@ -84,11 +80,6 @@ App EC2:
   - allow `443/tcp` from `0.0.0.0/0`
   - allow `22/tcp` only from `10.8.0.0/24`
   - no public SSH rule
-
-RDS PostgreSQL:
-
-- same VPC as the EC2 instances
-- security group allows `5432/tcp` from the app EC2 security group only
 
 DNS:
 
@@ -149,7 +140,10 @@ API_DOMAIN=apipetrotransit.fonefit.com
 CADDY_EMAIL=ops@fonefit.com
 VITE_API_BASE_URL=https://apipetrotransit.fonefit.com
 
-ConnectionStrings__DefaultConnection=Host=<rds-endpoint>;Port=5432;Database=<db>;Username=<user>;Password=<password>
+POSTGRES_DB=petrotransit
+POSTGRES_USER=petro
+POSTGRES_PASSWORD=<strong-db-password>
+ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=petrotransit;Username=petro;Password=<strong-db-password>
 AppSettings__Token=<long-random-secret>
 Frontend__BaseUrl=https://petrotransit.fonefit.com
 Frontend__AllowedOrigins=https://petrotransit.fonefit.com
@@ -168,9 +162,67 @@ Notes:
 
 - `VITE_API_BASE_URL` must stay on `https://apipetrotransit.fonefit.com`
 - `Frontend__BaseUrl` and `Frontend__AllowedOrigins` should remain `https://petrotransit.fonefit.com`
+- `ConnectionStrings__DefaultConnection` should point to the compose service name `db`
 - do not commit `.env`
 
-## 7. First Deployment
+## 7. Migrating Data Off RDS
+
+If the RDS database is disposable, skip this section. The API runs EF Core migrations automatically on startup and will create the schema in the containerized PostgreSQL instance.
+
+If the RDS data must be preserved:
+
+1. Start only the new PostgreSQL container:
+
+```bash
+cd <repo-root>/deploy/aws/app
+docker compose up -d db
+```
+
+2. Install the PostgreSQL client on the app EC2 if it is not present:
+
+```bash
+sudo apt update
+sudo apt install -y postgresql-client
+```
+
+3. Dump RDS to a plain SQL file:
+
+```bash
+PGPASSWORD='<rds-password>' pg_dump \
+  -h <rds-endpoint> \
+  -U <rds-user> \
+  -d <rds-database> \
+  --clean --if-exists --no-owner --no-privileges \
+  > petrotransit-rds.sql
+```
+
+4. Restore the dump into the Docker PostgreSQL container:
+
+```bash
+docker compose exec -T db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < petrotransit-rds.sql
+```
+
+5. Inspect the restore quickly:
+
+```bash
+docker compose exec db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\\dt"'
+```
+
+6. Start the full app stack:
+
+```bash
+docker compose up -d --build
+```
+
+7. Validate the site before deleting RDS:
+   - frontend loads
+   - `/health` returns OK
+   - existing users can log in
+   - representative records are present
+
+Take a final manual RDS snapshot only if your team wants rollback insurance. Otherwise, delete the RDS instance promptly to stop the monthly cost.
+
+## 8. First Deployment
 
 From `deploy/aws/app`:
 
@@ -185,16 +237,17 @@ docker compose ps
 docker compose logs -f caddy
 docker compose logs -f api
 docker compose logs -f web
+docker compose logs -f db
 ```
 
 Expected result:
 
-- `caddy`, `api`, and `web` are running
+- `db`, `caddy`, `api`, and `web` are running
 - Caddy obtains certificates after DNS points to the app EC2 Elastic IP
 - `https://petrotransit.fonefit.com` loads
 - `https://apipetrotransit.fonefit.com/health` returns OK
 
-## 8. DNS Cutover
+## 9. DNS Cutover
 
 In Route53, create or update:
 
@@ -209,7 +262,7 @@ After DNS resolves:
 - open the API health URL directly
 - confirm Caddy finished certificate issuance
 
-## 9. Post-Deployment Validation
+## 10. Post-Deployment Validation
 
 Validate these items in order:
 
@@ -221,7 +274,7 @@ Validate these items in order:
 6. Confirm authenticated API calls succeed.
 7. Test password reset or another SMTP-backed flow.
 
-## 10. Day-2 Operations
+## 11. Day-2 Operations
 
 ### Deploying a code update
 
@@ -291,14 +344,15 @@ docker compose up -d --build
 
 Do not delete named volumes unless you intend to remove:
 
+- PostgreSQL application data
 - ASP.NET data-protection keys
 - Caddy certificate/state data
 
-## 11. Backups And Data You Must Preserve
+## 12. Backups And Data You Must Preserve
 
 Important persisted data:
 
-- RDS database
+- Docker volume `pgdata`
 - Docker volume `api_keys`
 - Docker volume `caddy_data`
 - Docker volume `caddy_config`
@@ -306,18 +360,25 @@ Important persisted data:
 
 What each one is for:
 
-- RDS stores application data
+- `pgdata` stores application data
 - `api_keys` keeps ASP.NET data-protection keys stable across container restarts
 - `caddy_data` and `caddy_config` preserve issued TLS cert state
 - OpenVPN PKI materials are required to issue or revoke admin access
 
 At minimum:
 
-- ensure RDS automated backups are enabled
+- take regular PostgreSQL dumps from the Docker database
 - securely back up the OpenVPN CA directory
 - avoid deleting Docker named volumes casually
 
-## 12. Common Troubleshooting
+Database backup example:
+
+```bash
+cd <repo-root>/deploy/aws/app
+docker compose exec -T db sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > petrotransit-backup.sql
+```
+
+## 13. Common Troubleshooting
 
 ### Frontend loads but API calls fail
 
@@ -325,6 +386,7 @@ Check:
 
 - `VITE_API_BASE_URL` in `deploy/aws/app/.env`
 - `Frontend__AllowedOrigins` in `deploy/aws/app/.env`
+- `ConnectionStrings__DefaultConnection` points to `Host=db`
 - `docker compose logs api`
 - `https://apipetrotransit.fonefit.com/health`
 
@@ -354,6 +416,15 @@ Check:
 - containers are healthy via `docker compose ps`
 - Caddy logs do not show routing or cert issues
 
+### API will not start because the database is unavailable
+
+Check:
+
+- `docker compose ps db`
+- `docker compose logs --tail=200 db`
+- `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` in `.env`
+- `ConnectionStrings__DefaultConnection` matches those values
+
 ### Password reset email does not send
 
 Check:
@@ -362,15 +433,16 @@ Check:
 - SES sender identity and region
 - `docker compose logs api`
 
-## 13. Safe Change Rules
+## 14. Safe Change Rules
 
 - Keep OpenVPN on its own EC2.
 - Keep SSH to the app EC2 restricted to the VPN subnet only.
 - Keep the API on the separate public hostname.
 - Do not replace Caddy with direct container port exposure.
+- Do not publish the PostgreSQL container port publicly.
 - Do not delete named Docker volumes unless you understand the recovery impact.
 
-## 14. Quick Command Reference
+## 15. Quick Command Reference
 
 App deploy:
 
@@ -391,6 +463,7 @@ App logs:
 docker compose logs --tail=200 api
 docker compose logs --tail=200 caddy
 docker compose logs --tail=200 web
+docker compose logs --tail=200 db
 ```
 
 VPN service status:

@@ -21,10 +21,10 @@ Production deployment:
 
 - `EC2 #1`: OpenVPN host for admin access
 - `EC2 #2`: app host running Docker for:
+  - `postgres`
   - `caddy`
   - `web`
   - `api`
-- `RDS PostgreSQL`: production database
 - `Route53`: public DNS for:
   - `petrotransit.fonefit.com`
   - `apipetrotransit.fonefit.com`
@@ -35,7 +35,7 @@ Traffic flow:
 2. Caddy on the app EC2 serves the frontend
 3. Frontend API requests go to `https://apipetrotransit.fonefit.com`
 4. Caddy proxies API traffic to the ASP.NET container on internal port `8080`
-5. The API connects to PostgreSQL in RDS
+5. The API connects to PostgreSQL on the internal Docker network
 
 Administrative access flow:
 
@@ -102,7 +102,7 @@ AWS deployment layout:
 - `deploy/aws/openvpn/README.md`
   - detailed OpenVPN EC2 runbook
 - `deploy/aws/app/docker-compose.yml`
-  - app EC2 Docker stack for `caddy + web + api`
+  - app EC2 Docker stack for `postgres + caddy + web + api`
 - `deploy/aws/app/.env.example`
   - production app-host env template
 - `deploy/aws/app/Caddyfile`
@@ -170,8 +170,8 @@ Production uses:
 
 - OpenVPN on a dedicated EC2
 - Docker on the app EC2
+- PostgreSQL in Docker on the app EC2
 - Caddy for TLS termination and reverse proxying
-- RDS PostgreSQL for the database
 - SES for SMTP
 
 Important production behavior:

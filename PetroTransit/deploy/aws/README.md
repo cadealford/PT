@@ -7,7 +7,7 @@ For the complete build, deployment, and day-2 operations guide, start with:
 This repo is now prepared for the final two-EC2 production layout:
 
 - `EC2 #1`: OpenVPN server, installed directly on the host
-- `EC2 #2`: app server running Docker for `caddy + web + api`
+- `EC2 #2`: app server running Docker for `postgres + caddy + web + api`
 
 Public production URLs remain:
 
@@ -28,7 +28,6 @@ Use:
 
 - 1 public OpenVPN EC2 with Elastic IP
 - 1 public app EC2 with Elastic IP
-- 1 RDS PostgreSQL database
 - 2 Route53 `A` records pointing to the app EC2 Elastic IP
 - SES SMTP credentials for outbound email
 
@@ -41,6 +40,7 @@ Recommended instance roles:
 - App EC2:
   - Ubuntu 24.04
   - Docker Engine and Docker Compose plugin
+  - `postgres` container on the internal Docker network
   - `caddy` container on `80/443`
   - `web` container on internal port `80`
   - `api` container on internal port `8080`
@@ -86,15 +86,7 @@ App EC2 security group:
 - do **not** allow `22/tcp` from `0.0.0.0/0`
 - allow `22/tcp` only from the VPN client CIDR, such as `10.8.0.0/24`
 
-RDS security group:
-
-- allow PostgreSQL `5432/tcp` from the app EC2 security group only
-
-## RDS
-
-Provision a PostgreSQL database and set the API connection string to point to it.
-
-Do not deploy the local Docker `db` service to AWS.
+Do not expose PostgreSQL publicly. The `db` container stays on the internal Docker network only.
 
 ## SMTP
 
@@ -131,7 +123,10 @@ API_DOMAIN=apipetrotransit.fonefit.com
 CADDY_EMAIL=ops@fonefit.com
 VITE_API_BASE_URL=https://apipetrotransit.fonefit.com
 
-ConnectionStrings__DefaultConnection=Host=...;Port=5432;Database=...;Username=...;Password=...
+POSTGRES_DB=petrotransit
+POSTGRES_USER=petro
+POSTGRES_PASSWORD=<strong-db-password>
+ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=petrotransit;Username=petro;Password=<strong-db-password>
 AppSettings__Token=<long-random-secret>
 Frontend__BaseUrl=https://petrotransit.fonefit.com
 Frontend__AllowedOrigins=https://petrotransit.fonefit.com
@@ -148,17 +143,71 @@ Smtp__FromEmail=<sender@fonefit.com>
 
 Do not commit real values to the repo.
 
+The `ConnectionStrings__DefaultConnection` values should match `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`.
+
+## Migrating Off RDS
+
+If the current RDS instance has no data worth keeping, you can skip the dump and let the API create the schema on first boot by running EF Core migrations automatically.
+
+If you need to keep the current data:
+
+1. On the app EC2, copy `deploy/aws/app/.env.example` to `.env` and fill in the final container-based database values.
+2. Start only PostgreSQL first:
+
+```bash
+cd deploy/aws/app
+docker compose up -d db
+```
+
+3. Install the PostgreSQL client on the app EC2 if needed:
+
+```bash
+sudo apt update
+sudo apt install -y postgresql-client
+```
+
+4. Dump the RDS database:
+
+```bash
+PGPASSWORD='<rds-password>' pg_dump \
+  -h <rds-endpoint> \
+  -U <rds-user> \
+  -d <rds-database> \
+  --clean --if-exists --no-owner --no-privileges \
+  > petrotransit-rds.sql
+```
+
+5. Restore into the Docker PostgreSQL container:
+
+```bash
+docker compose exec -T db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < petrotransit-rds.sql
+```
+
+6. Start the full stack:
+
+```bash
+docker compose up -d --build
+```
+
+7. Verify the application works before deleting RDS:
+
+- `https://petrotransit.fonefit.com`
+- `https://apipetrotransit.fonefit.com/health`
+- login and a few representative reads/writes
+
+After verification, delete the RDS instance and remove its security group/rules. If your team wants a rollback point, take a final manual snapshot first.
+
 ## Deployment workflow
 
 1. Launch the OpenVPN EC2 in the target VPC and attach an Elastic IP.
 2. Install and configure OpenVPN on the host.
 3. Launch the app EC2 in the same VPC and attach an Elastic IP.
 4. Apply the app EC2 security group so SSH is allowed only from the VPN client CIDR.
-5. Provision RDS PostgreSQL.
-6. Install Docker Engine and Docker Compose on the app EC2.
-7. Clone this repo onto the app EC2.
-8. Copy `deploy/aws/app/.env.example` to `deploy/aws/app/.env`.
-9. Fill in the real domain, database, token, seed, and SMTP values.
+5. Install Docker Engine and Docker Compose on the app EC2.
+6. Clone this repo onto the app EC2.
+7. Copy `deploy/aws/app/.env.example` to `deploy/aws/app/.env`.
+8. Fill in the real domain, database, token, seed, and SMTP values.
+9. If needed, migrate data from RDS into the Docker PostgreSQL container.
 10. From `deploy/aws/app`, run:
 
 ```bash
@@ -182,8 +231,9 @@ If you use a Graviton instance such as `t4g`, the current Docker base images for
 
 1. Provision the OpenVPN EC2 and validate client connectivity.
 2. Provision the app EC2 with locked-down SSH.
-3. Provision RDS PostgreSQL and gather the final connection string.
-4. Fill in `deploy/aws/app/.env`.
+3. Fill in `deploy/aws/app/.env` with the Docker PostgreSQL values.
+4. Migrate RDS data if it must be preserved.
 5. Deploy the Docker stack on the app EC2.
 6. Point Route53 DNS at the app EC2 Elastic IP.
 7. Validate frontend, API, auth, and email behavior.
+8. Delete the RDS instance after verification.

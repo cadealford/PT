@@ -1,4 +1,22 @@
 services:
+  db:
+    image: postgres:16
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   api:
     build:
       context: ../../../PetroTransit.API
@@ -6,6 +24,9 @@ services:
       - .env
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      db:
+        condition: service_healthy
     expose:
       - "8080"
     volumes:
@@ -38,6 +59,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  pgdata:
   api_keys:
   caddy_data:
   caddy_config:
